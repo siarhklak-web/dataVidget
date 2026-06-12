@@ -3,11 +3,15 @@
    Экспортирует:
      window.renderQaBoard(DATA) — тяжёлая редактируемая доска находок.
      window.renderQaBar()       — компактная панель действий (читает localStorage('qa_flow_state')).
+     window.applyQaPatch(patch[,base]) — пересборка доски ДЕЛЬТОЙ: берёт сохранённое состояние,
+                                         вливает изменённые поля и рисует штатным renderQaBoard.
    Использование:
      доска:  <div id="qaRoot"></div><p id="qaEmpty"></p> + кнопки b_*  +<script>const DATA={...}</script>
              <script src="…/board.js"></script><script>renderQaBoard(DATA)</script>
      панель: <div id="qaBar"></div>
              <script src="…/board.js"></script><script>renderQaBar()</script>
+     дельта: <div id="qaRoot"></div><p id="qaEmpty"></p> + кнопки b_*
+             <script src="…/board.js"></script><script>applyQaPatch({D10:{...}})</script>
    sendPrompt — глобальная функция рантайма виджета. */
 (function(){
   var TYPES=["bug","task","question"],PRIOS=["low","med","high"],ENVS=["stage","prodlike","prod"],SEVS=["Minor","Major","Critical","Blocker"],RELS=["blocks","relates_to"];
@@ -60,5 +64,31 @@
     if(g('qb_jira'))g('qb_jira').addEventListener('click',function(){var x=lsGet();if(!x)return need();sendPrompt('Сначала синхронизируй лист с этими АКТУАЛЬНЫМИ полями из доски, затем заведи незакрытые bug/task в Jira (Betting, SportFrame), слинкуй с родителем из полей, проставь в листе ссылку и Completed (доску НЕ показывай и НЕ пересобирай — ответь текстом-итогом + панель кнопок). Поля: '+x)});
     if(g('qb_pull'))g('qb_pull').addEventListener('click',function(){var x=lsGet();if(!x)return need();sendPrompt('Подтяни изменения: прочитай лист и треды записей (канал = list_id с заменой первой F на C) из этих полей, сверь со списком и покажи текстом, что изменилось (доску НЕ пересобирай — только текст + панель кнопок). Поля: '+x)});
     if(g('qb_create'))g('qb_create').addEventListener('click',function(){var x=lsGet();if(!x)return need();sendPrompt('Создай новый Slack-лист (копия шаблона из полей, родитель и владелец из полей) по этим находкам и пришли id (доску НЕ показывай — текст + панель кнопок). Поля: '+x)});
+  };
+
+  /* Пересборка ДЕЛЬТОЙ. patch — только изменения:
+       { "D10": { "Тип":"task", "Описание":"…" }, "D11": { "Описание":"…" },
+         "_meta": { "list_id":"F…", "parent":"BETTING-…" } }   // _meta — необязательно
+     Берётся сохранённое состояние (localStorage 'qa_flow_state'), в него вливаются только
+     переданные поля переданных строк, остальное остаётся как было; затем рисуется штатным
+     renderQaBoard — вид доски прежний, выводятся ВСЕ строки целиком.
+     base — резерв на случай пустого localStorage (полное состояние). */
+  window.applyQaPatch=function(patch,base){
+    var state=null; var raw=lsGet();
+    if(raw){try{state=JSON.parse(raw)}catch(e){state=null}}
+    if(!state)state=base||{rows:[]};
+    if(!Array.isArray(state.rows))state.rows=[];
+    patch=patch||{};
+    if(patch._meta){for(var mk in patch._meta){if(Object.prototype.hasOwnProperty.call(patch._meta,mk))state[mk]=patch._meta[mk]}}
+    for(var id in patch){
+      if(id==='_meta'||!Object.prototype.hasOwnProperty.call(patch,id))continue;
+      var fields=patch[id]||{},row=null;
+      for(var i=0;i<state.rows.length;i++){if(state.rows[i].id===id){row=state.rows[i];break}}
+      if(!row){row={id:id};state.rows.push(row)}
+      for(var f in fields){if(Object.prototype.hasOwnProperty.call(fields,f))row[f]=fields[f]}
+    }
+    try{localStorage.setItem('qa_flow_state',JSON.stringify(state))}catch(e){}
+    if(typeof window.renderQaBoard==='function')window.renderQaBoard(state);
+    return state;
   };
 })();
