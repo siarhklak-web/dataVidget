@@ -42,8 +42,7 @@
     function persist(){try{localStorage.setItem('qa_flow_state',JSON.stringify(state()))}catch(e){}}
     var hasList=!!D.list_id;
     if(g('b_create'))g('b_create').style.display=hasList?'none':'flex';
-    if(g('b_update'))g('b_update').addEventListener('click',function(){sendPrompt('Обнови лист по этим АКТУАЛЬНЫМ полям из доски (источник правды — это состояние, перезапиши строки; доску НЕ показывай, ответь текстом-итогом + панель кнопок): '+JSON.stringify(state()))});
-    if(g('b_jira'))g('b_jira').addEventListener('click',function(){sendPrompt('Сначала синхронизируй лист с этими АКТУАЛЬНЫМИ полями из доски, затем заведи незакрытые bug/task в Jira, слинкуй с '+D.parent+', проставь в листе ссылку и Completed (доску НЕ показывай, ответь текстом-итогом + панель кнопок). Поля: '+JSON.stringify(state()))});
+    if(g('b_jira'))g('b_jira').addEventListener('click',function(){sendPrompt('Заведи незакрытые bug/task в Jira по этим АКТУАЛЬНЫМ полям из доски (строки листа НЕ перезаписывай), слинкуй с '+D.parent+', проставь в issue эпик — тот же, что у родителя, после заведения проставь в листе ссылку и Completed (доску НЕ показывай, ответь текстом-итогом + панель кнопок). Поля: '+JSON.stringify(state()))});
     if(g('b_pull'))g('b_pull').addEventListener('click',function(){sendPrompt('Подтяни изменения: прочитай лист '+D.list_id+' и треды записей (канал '+D.pull_channel+'), обнови доску под состояние листа и покажи, что изменилось.')});
     if(g('b_create'))g('b_create').addEventListener('click',function(){sendPrompt('Создай новый Slack-лист (копия шаблона '+D.template_list+', родитель '+D.parent+', владелец '+D.owner+') по этим находкам из доски и пришли id. Поля: '+JSON.stringify(state()))});
     render();
@@ -55,13 +54,12 @@
     var s=lsGet(),hl=null; if(s){try{hl=!!JSON.parse(s).list_id}catch(e){hl=null}}
     function B(id,icon,label){return '<button id="'+id+'" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px"><i class="ti '+icon+'" aria-hidden="true"></i> '+label+' ↗</button>'}
     var html=B('qb_show','ti-layout-board','Показать доску');
-    if(hl===true){html+=B('qb_update','ti-list-check','Обновить лист')+B('qb_jira','ti-ticket','Завести в Jira')+B('qb_pull','ti-refresh','Подтянуть из листа')}
+    if(hl===true){html+=B('qb_jira','ti-ticket','Завести в Jira')+B('qb_pull','ti-refresh','Подтянуть из листа')}
     if(hl!==true){html+=B('qb_create','ti-plus','Создать лист')}
     bar.style.display='grid';bar.style.gridTemplateColumns='repeat(auto-fit,minmax(140px,1fr))';bar.style.gap='8px';bar.style.padding='.5rem 0';
     bar.innerHTML=html;
     g('qb_show').addEventListener('click',function(){var x=lsGet();sendPrompt('Покажи обновлённую редактируемую доску qa_flow_board. Пересобери её: учти мои правки из предыдущего виджета и комментарии/замечания из нашей переписки (в т.ч. правки описания). Лист НЕ обновляй.'+(x?' Мои правки из доски: '+x:''))});
-    if(g('qb_update'))g('qb_update').addEventListener('click',function(){var x=lsGet();if(!x)return need();sendPrompt('Обнови лист по этим АКТУАЛЬНЫМ полям из доски (источник правды — это состояние, перезапиши строки; доску НЕ показывай и НЕ пересобирай — ответь текстом-итогом + панель кнопок): '+x)});
-    if(g('qb_jira'))g('qb_jira').addEventListener('click',function(){var x=lsGet();if(!x)return need();sendPrompt('Сначала синхронизируй лист с этими АКТУАЛЬНЫМИ полями из доски, затем заведи незакрытые bug/task в Jira (Betting, SportFrame), слинкуй с родителем из полей, проставь в листе ссылку и Completed (доску НЕ показывай и НЕ пересобирай — ответь текстом-итогом + панель кнопок). Поля: '+x)});
+    if(g('qb_jira'))g('qb_jira').addEventListener('click',function(){var x=lsGet();if(!x)return need();sendPrompt('Заведи незакрытые bug/task в Jira (Betting, SportFrame) по этим АКТУАЛЬНЫМ полям из доски (строки листа НЕ перезаписывай), слинкуй с родителем из полей, проставь в issue эпик — тот же, что у родителя, после заведения проставь в листе ссылку и Completed (доску НЕ показывай и НЕ пересобирай — ответь текстом-итогом + панель кнопок). Поля: '+x)});
     if(g('qb_pull'))g('qb_pull').addEventListener('click',function(){var x=lsGet();if(!x)return need();sendPrompt('Подтяни изменения: прочитай лист и треды записей (канал = list_id с заменой первой F на C) из этих полей, сверь со списком и покажи текстом, что изменилось (доску НЕ пересобирай — только текст + панель кнопок). Поля: '+x)});
     if(g('qb_create'))g('qb_create').addEventListener('click',function(){var x=lsGet();if(!x)return need();sendPrompt('Создай новый Slack-лист (копия шаблона из полей, родитель и владелец из полей) по этим находкам и пришли id (доску НЕ показывай — текст + панель кнопок). Поля: '+x)});
   };
